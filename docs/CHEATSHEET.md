@@ -93,4 +93,4 @@ If you're curious, here's what happens behind the scenes:
 - **Want to see what's changed**: Ask "show me the git status"
 - **Changes not appearing for team**: Ask Claude "push my changes to GitHub"
 - **Need to start over on a feature**: Ask "switch to main and create a new branch for [feature]"
-- **"Need collaborator access"**: Send your GitHub username to the repo owner, accept the invite at github.com/notifications, then tell Claude "try again"
+- **"Permission denied" or "access" error**: Tell Claude "I can't push" -- it will look up your GitHub username and tell you who to contact. Your work is safe locally in the meantime.

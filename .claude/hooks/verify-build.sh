@@ -10,6 +10,14 @@ if [ "$STOP_HOOK_ACTIVE" = "true" ]; then
     exit 0
 fi
 
+# Source platform detection helper
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DETECT_ENV="$SCRIPT_DIR/../../scripts/detect-env.sh"
+if [[ -f "$DETECT_ENV" ]]; then
+    source "$DETECT_ENV"
+    ensure_native_dotnet
+fi
+
 # Try to build the project
 BUILD_OUTPUT=$(dotnet build --nologo --verbosity quiet 2>&1)
 BUILD_EXIT=$?

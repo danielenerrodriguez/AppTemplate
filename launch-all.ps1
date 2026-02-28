@@ -7,13 +7,42 @@ Write-Host "  Web: http://localhost:8080" -ForegroundColor Green
 Write-Host "  Press Ctrl+C to stop both" -ForegroundColor Yellow
 Write-Host ""
 
+# Auto-detect Anthropic API key from ~/.claude.json
+if (-not $env:ANTHROPIC_API_KEY) {
+    $claudeJson = Join-Path $HOME ".claude.json"
+    if (Test-Path $claudeJson) {
+        try {
+            $config = Get-Content $claudeJson -Raw | ConvertFrom-Json
+            if ($config.primaryApiKey) {
+                $env:ANTHROPIC_API_KEY = $config.primaryApiKey
+                Write-Host "  Anthropic API key detected -- AI chat is ready" -ForegroundColor Green
+                Write-Host ""
+            }
+        } catch {
+            # Silently continue -- manual key entry via chat bubble is the fallback
+        }
+    }
+}
+
+# Build first
+Write-Host "Building..." -ForegroundColor Yellow
+dotnet build --nologo --verbosity quiet
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Build failed. Fix errors before launching." -ForegroundColor Red
+    exit 1
+}
+Write-Host "Build succeeded." -ForegroundColor Green
+Write-Host ""
+
 $apiJob = Start-Job -ScriptBlock {
     Set-Location $using:PWD
+    $env:ANTHROPIC_API_KEY = $using:env:ANTHROPIC_API_KEY
     dotnet run --project src/AppTemplate.Api --no-build 2>&1
 }
 
 $webJob = Start-Job -ScriptBlock {
     Set-Location $using:PWD
+    $env:ANTHROPIC_API_KEY = $using:env:ANTHROPIC_API_KEY
     dotnet run --project src/AppTemplate.Web --no-build 2>&1
 }
 

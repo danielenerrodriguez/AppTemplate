@@ -21,7 +21,7 @@ Greet them warmly and introduce yourself:
 > Let me first make sure your environment is ready...
 
 Then:
-1. Run the full first-time setup checks from the git-workflow rules (install .NET SDK, gh CLI, GitHub auth, git identity) -- narrate what you're doing as you go so they're not confused
+1. Run the full first-time setup checks from the git-workflow rules (install .NET SDK, gh CLI, GitHub auth via company email, git identity) -- narrate what you're doing in plain language so non-dev participants aren't confused
 2. **Auto-detect Anthropic API key** (see "API Key Auto-Detection" section below)
 3. After setup passes, give a brief orientation:
    - "This project has a .NET API backend (port 5050) and a Blazor web frontend (port 8080)"
@@ -147,9 +147,8 @@ Git is fully automated. You (Claude) manage all git operations -- the user never
 On every session start, check the user's environment and auto-install anything missing:
 1. .NET SDK -- detect platform (WSL2/Windows/Mac), install if missing
 2. GitHub CLI (`gh`) -- detect platform, install if missing
-3. GitHub auth -- `gh auth login --web` to open browser-based login if not authenticated
-4. Git credentials -- `gh auth setup-git` to configure
-5. Collaborator access -- verify push access, guide user if needed
+3. GitHub auth -- `gh auth login --web` (sign in with company email), then `gh auth setup-git`
+4. Git identity -- set name/email if not configured
 See git-workflow rules for full platform-specific install commands.
 
 ### Session Start (ALWAYS do this first)
@@ -165,11 +164,9 @@ On every session start, check if `ANTHROPIC_API_KEY` is already set. If not, aut
 ```bash
 # Check if already set
 if [ -z "$ANTHROPIC_API_KEY" ]; then
-    # Try ~/.claude.json (Claude Code / OpenCode stores primaryApiKey here after OAuth setup)
-    KEY=$(jq -r '.primaryApiKey // ""' ~/.claude.json 2>/dev/null || grep -o '"primaryApiKey":"[^"]*"' ~/.claude.json 2>/dev/null | sed 's/.*:"//;s/"//')
-    if [ -n "$KEY" ]; then
-        export ANTHROPIC_API_KEY="$KEY"
-    fi
+    # Use the shared helper (handles jq, python3, and grep fallbacks)
+    source scripts/detect-env.sh
+    detect_api_key
 fi
 ```
 
@@ -178,10 +175,6 @@ fi
 - NEVER commit, log, or display the full API key -- only show masked version (`sk-ant-****xxxx`)
 - NEVER read `~/.claude.json` for any purpose other than extracting `primaryApiKey`
 - The key lives ONLY as an in-memory environment variable for the current session
-- When launching servers, pass it via PowerShell (WSL2 `export` does NOT propagate to Windows `dotnet`):
-  ```bash
-  powershell.exe -Command "$env:ANTHROPIC_API_KEY='$API_KEY'; Start-Process -NoNewWindow dotnet -ArgumentList 'run','--project','...'"
-  ```
 - The chat bubble's "env-key-available" endpoint will detect it automatically
 
 **WSL2 note:** If the SQLite database already exists from a previous run, `EnsureCreated` won't add new tables. If you see "no such table" errors, delete the `.db` file and restart:
@@ -205,13 +198,15 @@ If it fails, no error -- the chat bubble will show the manual key entry form as 
      # Windows fallback
      powershell.exe -Command "Get-NetTCPConnection -LocalPort 5050,8080 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id \$_.OwningProcess -Force -ErrorAction SilentlyContinue }"
      ```
-  2. Start both servers in background. **Important**: Since `dotnet` is a Windows binary, env vars must be set in the Windows process context via PowerShell:
+  2. Start both servers in background:
      ```bash
-     API_KEY=$(jq -r '.primaryApiKey // ""' ~/.claude.json 2>/dev/null || grep -o '"primaryApiKey":"[^"]*"' ~/.claude.json 2>/dev/null | sed 's/.*:"//;s/"//')
-     WIN_DIR='C:\Users\danielenerrodriguez\source\repos\AppTemplate'
-     powershell.exe -Command "\$env:ANTHROPIC_API_KEY='$API_KEY'; Start-Process -NoNewWindow dotnet -ArgumentList 'run','--project','$WIN_DIR\\src\\AppTemplate.Api'; Start-Sleep -Seconds 3; Start-Process -NoNewWindow dotnet -ArgumentList 'run','--project','$WIN_DIR\\src\\AppTemplate.Web'"
+     source scripts/detect-env.sh
+     ensure_native_dotnet
+     detect_api_key
+     ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}" dotnet run --project src/AppTemplate.Api &
+     sleep 3
+     ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}" dotnet run --project src/AppTemplate.Web &
      ```
-     Note: WSL2 `export` does NOT propagate env vars to Windows `dotnet` processes. Always use `powershell.exe` to set env vars and launch.
   3. Confirm to the user: "Servers relaunched -- API on 5050, Web on 8080"
 
 ### Before Stopping (ALWAYS do this)

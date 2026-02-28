@@ -28,22 +28,42 @@ A project template with .NET 10, Blazor Server, and AI integration pre-configure
 
 ## Quick Start
 
+### Option A: Claude Code (recommended for hackathons)
+
+```bash
+git clone https://github.com/danielenerrodriguez/AppTemplate.git
+cd AppTemplate
+claude
+```
+
+Claude handles everything: environment setup, git, builds, and onboarding. Just tell it what you want to build.
+
+### Option B: VS Code Dev Container (zero-setup)
+
+1. Install [Docker](https://www.docker.com/products/docker-desktop/) and the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+2. Clone the repo and open in VS Code
+3. When prompted, click **"Reopen in Container"**
+4. The container installs .NET 10, restores packages, and builds automatically
+5. Run: `./launch-all.sh`
+
+### Option C: Manual setup
+
 ```bash
 # Clone
 git clone https://github.com/danielenerrodriguez/AppTemplate.git
 cd AppTemplate
 
+# Build & test
+dotnet build
+dotnet test
+
 # Run both API (port 5050) and Web (port 8080)
-./launch-all.sh        # Linux/Mac
-.\launch-all.ps1       # Windows
+./launch-all.sh        # Linux/Mac/WSL2
+.\launch-all.ps1       # Windows PowerShell
 
 # Or run separately
 dotnet run --project src/AppTemplate.Api
 dotnet run --project src/AppTemplate.Web
-
-# Build & test
-dotnet build
-dotnet test
 
 # Docker
 docker compose up --build
@@ -115,3 +135,55 @@ Both servers bind to `0.0.0.0` so teammates on the same network can access the a
    (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notlike '*Loopback*' -and $_.InterfaceAlias -notlike '*vEthernet*' }).IPAddress
    ```
 3. Other devices access the app at `http://<your-ip>:8080`
+
+## Troubleshooting
+
+### WSL2: Build fails with "static web assets" or UNC path errors
+
+This happens when WSL2's `dotnet` is actually the Windows binary (via PATH interop) and it can't handle Linux paths. The `launch-all.sh` script auto-detects this and converts paths. If running manually:
+
+```bash
+# Check if dotnet is the Windows binary
+which dotnet    # If it shows /mnt/c/..., it's the Windows binary
+
+# Option 1: Use launch-all.sh (auto-handles WSL2)
+./launch-all.sh
+
+# Option 2: Run via PowerShell explicitly
+WIN_DIR=$(wslpath -w "$(pwd)")
+powershell.exe -Command "dotnet build '$WIN_DIR'"
+```
+
+### "no such table" errors
+
+The SQLite database schema is outdated. Delete and let it recreate:
+
+```bash
+rm -f src/AppTemplate.Api/AppTemplate.db
+# Then restart the API server
+```
+
+### API key not detected
+
+The AI chat auto-detects your Anthropic API key from `~/.claude.json`. If it's not found:
+- **Manual entry**: Click the chat bubble (bottom-right) and enter your key in the settings panel
+- **Environment variable**: `export ANTHROPIC_API_KEY=sk-ant-...` before launching
+
+### Ports 5050/8080 already in use
+
+Kill stale processes:
+
+```bash
+# Linux/WSL2
+fuser -k 5050/tcp 8080/tcp
+
+# Windows PowerShell
+Get-NetTCPConnection -LocalPort 5050,8080 -ErrorAction SilentlyContinue |
+  ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
+```
+
+### Dev Container won't start
+
+- Make sure Docker Desktop is running
+- Try rebuilding: `Ctrl+Shift+P` > "Dev Containers: Rebuild Container"
+- Check Docker has enough memory allocated (at least 4GB recommended)

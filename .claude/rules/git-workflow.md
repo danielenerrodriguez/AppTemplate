@@ -15,7 +15,7 @@ Run `dotnet --version` to check if .NET is installed.
 If NOT installed, detect the platform and install it:
 - **WSL2 / Ubuntu / Debian**:
   ```
-  sudo apt-get update && sudo apt-get install -y dotnet-sdk-9.0
+  sudo apt-get update && sudo apt-get install -y dotnet-sdk-10.0
   ```
   If the package is not found, add the Microsoft apt repo first:
   ```
@@ -23,9 +23,9 @@ If NOT installed, detect the platform and install it:
   wget https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
   sudo dpkg -i packages-microsoft-prod.deb
   rm packages-microsoft-prod.deb
-  sudo apt-get update && sudo apt-get install -y dotnet-sdk-9.0
+  sudo apt-get update && sudo apt-get install -y dotnet-sdk-10.0
   ```
-- **Windows**: `winget install Microsoft.DotNet.SDK.9`
+- **Windows**: `winget install Microsoft.DotNet.SDK.10`
 - **Mac**: `brew install dotnet-sdk`
 - Tell the user: "I'm installing the .NET SDK -- you may be prompted for your password."
 - Verify after install: `dotnet --version`
@@ -52,16 +52,12 @@ If NOT installed, detect the platform and install it:
 ### 3. Check GitHub Authentication
 Run `gh auth status` to check if authenticated.
 If NOT authenticated:
-- Tell the user: "I need to set up your GitHub access so your work can be saved. A browser window will open -- sign in with your GitHub account (or create one at github.com/signup if you don't have one)."
+- Tell the user: "I need to connect you to GitHub so your work is saved automatically. A browser window will open -- sign in with your company email (the same one you use for work)."
 - Run: `gh auth login --hostname github.com --git-protocol https --web`
 - After success, run: `gh auth setup-git` to configure git credential helper
 - Verify: `gh auth status`
 
-### 4. Check Push Access
-Run `git ls-remote https://github.com/danielenerrodriguez/AppTemplate.git 2>&1`
-- If access denied, tell the user: "You need to be added as a collaborator on this repo. Send your GitHub username to the repo owner so they can add you. Once you get the invite, accept it at github.com/notifications, then tell me and I'll try again."
-
-### 5. Check Git Identity
+### 4. Check Git Identity
 If `git config user.name` is empty, ask the user for their name and email, then set it:
 - `git config user.name "Their Name"`
 - `git config user.email "their.email@example.com"`
@@ -109,12 +105,16 @@ Before you finish a session, ALWAYS:
 4. If there are merge conflicts, resolve them before merging
 5. The Stop hook (`git-sync.sh`) will also attempt this as a safety net
 
-## Handling Auth Failures
+## Handling Auth & Push Failures
 - If any push/pull/fetch fails with an authentication or credential error:
   1. Run `gh auth status` to check
   2. If not authenticated, walk the user through `gh auth login --hostname github.com --git-protocol https --web`
   3. After auth, run `gh auth setup-git` and retry the failed operation
-- If the user doesn't have collaborator access, tell them to send their GitHub username to the repo owner
+- If push fails with a permission/access error:
+  1. Tell the user: "It looks like your GitHub account doesn't have access to this repo yet. This usually means your team admin needs to add you. Let me check your GitHub username..."
+  2. Run `gh api user --jq '.login'` to get their username
+  3. Tell the user: "Your GitHub username is {username}. Ask your team lead to make sure you've been added to the repo, then tell me to try again."
+  4. Keep their changes safe on the local feature branch in the meantime
 
 ## Important Notes
 - Once `gh auth setup-git` has been run, both `git` and `git.exe` should work for remote operations

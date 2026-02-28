@@ -1,0 +1,17 @@
+{
+  "name": "AppTemplate",
+  "image": "mcr.microsoft.com/dotnet/sdk:10.0",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "forwardPorts": [5050, 8080],
+  "postCreateCommand": "dotnet restore && dotnet build --nologo --verbosity quiet",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-dotnettools.csharp",
+        "ms-dotnettools.csdevkit"
+      ]
+    }
+  }
+}
