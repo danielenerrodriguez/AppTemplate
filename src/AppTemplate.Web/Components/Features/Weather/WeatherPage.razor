@@ -1,0 +1,46 @@
+@page "/weather"
+@rendermode InteractiveServer
+
+<PageTitle>Weather</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Weather Forecast</MudText>
+
+@if (_errorMessage is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">@_errorMessage</MudAlert>
+}
+else if (_forecasts is null)
+{
+    <MudProgressCircular Indeterminate="true" Class="my-4" />
+}
+else
+{
+    <MudSimpleTable Hover="true" Striped="true" Bordered="true" Class="mb-4">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>City</th>
+                <th>Temp. (C)</th>
+                <th>Temp. (F)</th>
+                <th>Summary</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var forecast in _forecasts)
+            {
+                <tr>
+                    <td>@forecast.Date.ToShortDateString()</td>
+                    <td>@forecast.City</td>
+                    <td>@forecast.TemperatureC</td>
+                    <td>@forecast.TemperatureF</td>
+                    <td>@forecast.Summary</td>
+                </tr>
+            }
+        </tbody>
+    </MudSimpleTable>
+
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadForecast"
+               StartIcon="@Icons.Material.Filled.Refresh">
+        Refresh
+    </MudButton>
+}

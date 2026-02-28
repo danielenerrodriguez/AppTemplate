@@ -1,0 +1,19 @@
+@AppTemplate.Api_HostAddress = http://localhost:5050
+
+### Get all weather forecasts
+GET {{AppTemplate.Api_HostAddress}}/api/weather
+Accept: application/json
+
+### Get weather for a specific city
+GET {{AppTemplate.Api_HostAddress}}/api/weather/London
+Accept: application/json
+
+### Check if server API key is available
+GET {{AppTemplate.Api_HostAddress}}/api/chat/env-key-available
+Accept: application/json
+
+### List available AI models
+GET {{AppTemplate.Api_HostAddress}}/api/chat/models
+Accept: application/json
+
+###

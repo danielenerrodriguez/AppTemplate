@@ -1,0 +1,53 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.dll
+*.pdb
+*.exe
+*.nupkg
+*.snupkg
+
+## IDE
+.vs/
+.vscode/
+*.swp
+*.swo
+*~
+.idea/
+
+## OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+## Build
+publish/
+out/
+
+## Secrets and environment
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
+
+## SQLite database files
+*.db
+*.db-shm
+*.db-wal
+
+## Logs
+logs/
+*.log
+
+## NuGet (keep the local config)
+!nuget.config
+
+## Docker
+docker-compose.override.yml
+
+## Claude Code local settings
+.claude/settings.local.json
+CLAUDE.local.md

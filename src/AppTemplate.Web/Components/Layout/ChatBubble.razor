@@ -1,0 +1,237 @@
+@rendermode InteractiveServer
+
+@* Floating chat bubble - always visible in bottom-right corner *@
+
+@* MudPopoverProvider needed inside this interactive boundary for MudSelect dropdown *@
+<MudPopoverProvider />
+
+<div class="chat-bubble-container" style="position: fixed; bottom: 24px; right: 24px; z-index: 9999;">
+    @if (!_isOpen)
+    {
+        <MudFab Color="MudBlazor.Color.Primary"
+                StartIcon="@Icons.Material.Filled.Chat"
+                Size="MudBlazor.Size.Large"
+                OnClick="ToggleChat"
+                aria-label="Open chat" />
+    }
+    else
+    {
+        <MudPaper Elevation="8" Class="d-flex flex-column" Style="width: 380px; height: 520px; border-radius: 16px; overflow: hidden;">
+            @* Header *@
+            <MudToolBar Dense="true" Class="d-flex justify-space-between" Style="background-color: var(--mud-palette-primary); color: white;">
+                <MudText Typo="Typo.subtitle1" Style="color: white; font-weight: 600;">AI Chat</MudText>
+                <div>
+                    @if (_currentView == ChatView.Chat)
+                    {
+                        <MudIconButton Icon="@Icons.Material.Filled.Settings"
+                                       Size="MudBlazor.Size.Small"
+                                       Style="color: white;"
+                                       OnClick="OpenSettings" />
+                    }
+                    <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                   Size="MudBlazor.Size.Small"
+                                   Style="color: white;"
+                                   OnClick="ToggleChat" />
+                </div>
+            </MudToolBar>
+
+            @* Body *@
+            <div class="flex-grow-1 d-flex flex-column" style="overflow: hidden;">
+                @switch (_currentView)
+                {
+                    case ChatView.Setup:
+                        @* API Key Setup *@
+                        <div class="pa-4 d-flex flex-column justify-center" style="height: 100%; overflow-y: auto;">
+                            <MudText Typo="Typo.h6" Align="Align.Center" Class="mb-2">API Key Required</MudText>
+
+                            @if (_envKeyAvailable)
+                            {
+                                <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">
+                                    A server API key is available. You can skip this step.
+                                </MudAlert>
+                                <MudButton Variant="Variant.Filled"
+                                           Color="MudBlazor.Color.Primary"
+                                           FullWidth="true"
+                                           Class="mb-3"
+                                           OnClick="UseEnvKey">
+                                    Use Server Key
+                                </MudButton>
+                                <MudDivider Class="mb-3" />
+                                <MudText Typo="Typo.body2" Align="Align.Center" Class="mb-2">Or enter your own key:</MudText>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.body2" Align="Align.Center" Class="mb-3">
+                                    Enter your Anthropic API key to start chatting.
+                                </MudText>
+                            }
+
+                            <MudTextField @bind-Value="_apiKeyInput"
+                                          Label="API Key"
+                                          Placeholder="sk-ant-..."
+                                          Variant="Variant.Outlined"
+                                          InputType="InputType.Password"
+                                          Class="mb-3" />
+
+                            <MudButton Variant="Variant.Filled"
+                                       Color="MudBlazor.Color.Primary"
+                                       FullWidth="true"
+                                       Disabled="@string.IsNullOrWhiteSpace(_apiKeyInput)"
+                                       OnClick="SaveApiKey">
+                                Save Key
+                            </MudButton>
+
+                            <MudText Typo="Typo.caption" Align="Align.Center" Class="mt-2" Color="MudBlazor.Color.Secondary">
+                                Tip: If you use Claude Code or OpenCode, your key is auto-detected on session start.
+                            </MudText>
+
+                            @if (_setupError is not null)
+                            {
+                                <MudAlert Severity="Severity.Error" Dense="true" Class="mt-2">@_setupError</MudAlert>
+                            }
+                        </div>
+                        break;
+
+                    case ChatView.Chat:
+                        @* Chat Messages *@
+                        <div class="flex-grow-1 pa-3" style="overflow-y: auto;" @ref="_messagesRef">
+                            @if (_messages.Count == 0)
+                            {
+                                <div class="d-flex flex-column align-center justify-center" style="height: 100%;">
+                                    <MudIcon Icon="@Icons.Material.Filled.ChatBubbleOutline" Size="MudBlazor.Size.Large" Color="MudBlazor.Color.Default" />
+                                    <MudText Typo="Typo.body2" Color="MudBlazor.Color.Secondary" Class="mt-2">Send a message to start chatting</MudText>
+                                </div>
+                            }
+
+                            @foreach (var msg in _messages)
+                            {
+                                <div class="d-flex mb-2 @(msg.IsUser ? "justify-end" : "justify-start")">
+                                    <MudPaper Class="pa-2" Style="@GetMessageStyle(msg.IsUser)" Elevation="1">
+                                        <MudText Typo="Typo.body2" Style="white-space: pre-wrap; word-break: break-word;">@msg.Content</MudText>
+                                        @if (msg.IsStreaming)
+                                        {
+                                            <MudProgressCircular Size="MudBlazor.Size.Small" Indeterminate="true" Class="ml-1" Style="vertical-align: middle;" />
+                                        }
+                                    </MudPaper>
+                                </div>
+                            }
+                        </div>
+
+                        @* Input area *@
+                        <div class="pa-2 d-flex gap-2" style="border-top: 1px solid var(--mud-palette-lines-default);">
+                            <MudTextField @bind-Value="_userInput"
+                                          Placeholder="Type a message..."
+                                          Variant="Variant.Outlined"
+                                          Margin="Margin.Dense"
+                                          Class="flex-grow-1"
+                                          Disabled="@_isLoading"
+                                          OnKeyDown="HandleKeyDown"
+                                          Immediate="true" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Send"
+                                           Color="MudBlazor.Color.Primary"
+                                           Disabled="@(_isLoading || string.IsNullOrWhiteSpace(_userInput))"
+                                           OnClick="SendMessage" />
+                        </div>
+
+                        @if (_chatError is not null)
+                        {
+                            <MudAlert Severity="Severity.Error" Dense="true" Class="mx-2 mb-2" CloseIconClicked="() => _chatError = null" ShowCloseIcon="true">
+                                @_chatError
+                            </MudAlert>
+                        }
+                        break;
+
+                    case ChatView.Settings:
+                        @* Settings *@
+                        <div class="pa-4" style="overflow-y: auto;">
+                            <MudText Typo="Typo.h6" Class="mb-3">Settings</MudText>
+
+                            @if (_maskedKey is not null)
+                            {
+                                <MudText Typo="Typo.body2" Class="mb-1">Current API Key:</MudText>
+                                <MudText Typo="Typo.body1" Class="mb-3" Style="font-family: monospace;">@_maskedKey</MudText>
+
+                            @if (_confirmingDelete)
+                            {
+                                <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-3">
+                                    Are you sure? This cannot be undone.
+                                    <div class="d-flex gap-2 mt-2">
+                                        <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Error" Size="MudBlazor.Size.Small" OnClick="ConfirmDeleteYes">Delete</MudButton>
+                                        <MudButton Variant="Variant.Outlined" Size="MudBlazor.Size.Small" OnClick="ConfirmDeleteNo">Cancel</MudButton>
+                                    </div>
+                                </MudAlert>
+                            }
+                            else
+                            {
+                                <MudButton Variant="Variant.Outlined"
+                                           Color="MudBlazor.Color.Error"
+                                           FullWidth="true"
+                                           StartIcon="@Icons.Material.Filled.Delete"
+                                           OnClick="ConfirmDeleteKey"
+                                           Class="mb-3">
+                                    Delete API Key
+                                </MudButton>
+                            }
+                            }
+                            else if (_usingEnvKey)
+                            {
+                                <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">
+                                    Using server-provided API key.
+                                </MudAlert>
+                            }
+
+                            @* Model Selector *@
+                            <MudText Typo="Typo.body2" Class="mb-1">Model:</MudText>
+                            @if (_loadingModels)
+                            {
+                                <div class="d-flex align-center gap-2 mb-3">
+                                    <MudProgressCircular Size="MudBlazor.Size.Small" Indeterminate="true" />
+                                    <MudText Typo="Typo.body2" Color="MudBlazor.Color.Secondary">Loading models...</MudText>
+                                </div>
+                            }
+                            else if (_availableModels.Count > 0)
+                            {
+                                <MudSelect T="string"
+                                           Value="_selectedModel"
+                                           ValueChanged="OnModelChanged"
+                                           Variant="Variant.Outlined"
+                                           Margin="Margin.Dense"
+                                           Class="mb-3"
+                                           Dense="true">
+                                    @foreach (var model in _availableModels)
+                                    {
+                                        <MudSelectItem Value="@model.Id">@model.DisplayName</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.body2" Color="MudBlazor.Color.Secondary" Class="mb-3">
+                                    @GetModelDisplayName()
+                                </MudText>
+                            }
+
+                            <MudDivider Class="mb-3" />
+
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="MudBlazor.Color.Warning"
+                                       FullWidth="true"
+                                       StartIcon="@Icons.Material.Filled.DeleteSweep"
+                                       OnClick="ClearHistory"
+                                       Class="mb-3">
+                                Clear Chat History
+                            </MudButton>
+
+                            <MudButton Variant="Variant.Text"
+                                       FullWidth="true"
+                                       StartIcon="@Icons.Material.Filled.ArrowBack"
+                                       OnClick="() => _currentView = ChatView.Chat">
+                                Back to Chat
+                            </MudButton>
+                        </div>
+                        break;
+                }
+            </div>
+        </MudPaper>
+    }
+</div>
