@@ -8,7 +8,11 @@ The user should NEVER need to run git commands or install tools manually. You ha
 
 **NOTE**: See the "Session Start" section at the top of CLAUDE.md for the greeting and onboarding flow. Run that FIRST -- it will trigger these setup checks as part of the onboarding.
 
+**Interactive setup script**: Users can run `bash scripts/onboard.sh` directly in their terminal to check and install all prerequisites interactively (handles sudo prompts, browser auth, git identity). Recommend this when Claude cannot handle an interactive step itself.
+
 Before doing ANYTHING else, check the user's environment and set up everything they need:
+
+> **Interactive commands (sudo, browser auth):** Claude Code cannot handle interactive password prompts. When a step requires `sudo`, tell the user to run `bash scripts/onboard.sh` or present the command to the user and ask them to run it in their terminal. For `gh auth login --web`, the browser opens automatically but the user must complete the login in the browser.
 
 ### 1. Check .NET SDK
 Run `dotnet --version` to check if .NET is installed.
@@ -33,16 +37,9 @@ If NOT installed, detect the platform and install it:
 ### 2. Check GitHub CLI (`gh`)
 Run `which gh || which gh.exe` to check if `gh` is installed.
 If NOT installed, detect the platform and install it:
-- **WSL2 / Ubuntu / Debian**:
+- **WSL2 / Ubuntu / Debian** (requires sudo -- ask the user to run this in their terminal):
   ```
-  (type -p wget >/dev/null || (sudo apt update && sudo apt-get install wget -y)) \
-  && sudo mkdir -p -m 755 /etc/apt/keyrings \
-  && out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-  && cat $out | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
-  && sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
-  && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-  && sudo apt update \
-  && sudo apt install gh -y
+  sudo mkdir -p -m 755 /etc/apt/keyrings && wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null && sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg && sudo bash -c 'echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list' && sudo apt update && sudo apt install gh -y
   ```
 - **Windows**: `winget install --id GitHub.cli -e --accept-source-agreements --accept-package-agreements`
 - **Mac**: `brew install gh`
@@ -117,9 +114,9 @@ Before you finish a session, ALWAYS:
   4. Keep their changes safe on the local feature branch in the meantime
 
 ## Important Notes
-- Once `gh auth setup-git` has been run, both `git` and `git.exe` should work for remote operations
-- For fresh setups where `gh` is not yet configured, prefer `git.exe` for push/pull/fetch as it may have Windows Credential Manager
-- Use `git` for local operations (add, commit, checkout, merge, branch, status)
+- The correct approach for WSL: install `gh` → `gh auth login` → `gh auth setup-git` → native `git push` works
+- Always use `git` (not `git.exe`) for all operations once `gh auth setup-git` has been run
+- `git.exe` is unreliable from WSL (path translation breaks Git Credential Manager) -- avoid it unless absolutely no other option exists
 - Never commit: `.env` files, API keys, `appsettings.*.local.json`, `bin/`, `obj/`
 - Branch naming: `feature/{short-name}` or `fix/{short-name}`
 - If a merge to main fails (conflict or broken build), leave changes on the feature branch and inform the user

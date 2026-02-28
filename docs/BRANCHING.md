@@ -68,10 +68,18 @@ main (always buildable, deploy from here)
 
 If you ever need to run git commands manually:
 
+### Prerequisites
+Make sure `gh` is installed and authenticated first (Claude does this automatically):
+```bash
+gh auth login --hostname github.com --git-protocol https --web
+gh auth setup-git
+```
+After this, native `git` works for all operations (push, pull, fetch).
+
 ### Starting Work
 ```bash
 git checkout main
-git.exe pull origin main
+git pull origin main
 git checkout -b feature/my-feature
 ```
 
@@ -83,7 +91,7 @@ git commit -m "feat: add user profile page"
 
 # Stay up to date with main (do this every 30-60 min)
 git checkout main
-git.exe pull origin main
+git pull origin main
 git checkout feature/my-feature
 git merge main
 # Resolve any conflicts, then continue working
@@ -97,17 +105,17 @@ dotnet test
 
 # Merge to main
 git checkout main
-git.exe pull origin main
+git pull origin main
 git merge feature/my-feature
 
-# Push (use git.exe for remote operations)
-git.exe push origin main
+# Push
+git push origin main
 
 # Go back to your feature branch
 git checkout feature/my-feature
 ```
 
-**Note**: Always use `git.exe` (not `git`) for push/pull/fetch operations -- it has the Windows credentials.
+**Note**: If `git push` fails with a credential error, run `gh auth status` to check your authentication, then `gh auth setup-git` to fix the credential helper.
 
 ## Commit Message Convention
 Use these prefixes to keep history readable:

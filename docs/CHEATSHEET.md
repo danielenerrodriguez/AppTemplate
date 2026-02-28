@@ -8,8 +8,9 @@ Claude Code is an AI coding assistant that runs in your terminal. You talk to it
 ## Getting Started
 1. Open your terminal (Command Prompt, PowerShell, or Terminal)
 2. Navigate to the project folder: `cd path/to/AppTemplate`
-3. Type `claude` and press Enter
-4. Tell Claude your name and what you're working on -- it handles the rest!
+3. Run the setup checker: `bash scripts/onboard.sh` (first time only -- installs .NET, GitHub CLI, etc.)
+4. Type `claude` and press Enter
+5. Tell Claude your name and what you're working on -- it handles the rest!
 
 ## Git is Automatic
 
@@ -94,3 +95,8 @@ If you're curious, here's what happens behind the scenes:
 - **Changes not appearing for team**: Ask Claude "push my changes to GitHub"
 - **Need to start over on a feature**: Ask "switch to main and create a new branch for [feature]"
 - **"Permission denied" or "access" error**: Tell Claude "I can't push" -- it will look up your GitHub username and tell you who to contact. Your work is safe locally in the meantime.
+
+### Tool Install Issues
+- **Quick fix for any setup issue**: Run `bash scripts/onboard.sh` in your terminal -- it checks everything and walks you through fixes interactively.
+- **gh install failed / apt source error**: Tell Claude "the gh install broke, fix the sources.list" -- it will clean up `/etc/apt/sources.list.d/github-cli.list` and re-run the install. You may need to paste a `sudo` command in your terminal when prompted.
+- **sudo not working in Claude**: Claude can't type passwords. Run `bash scripts/onboard.sh` instead -- it handles sudo prompts directly. Or copy-paste the `sudo` command into your own terminal, enter your password there, then tell Claude "done".

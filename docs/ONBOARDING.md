@@ -13,7 +13,13 @@ That's it. Claude will install everything else for you.
 
 ## Getting Started
 
-After cloning the repo, open a terminal in the project folder and run:
+After cloning the repo, open a terminal in the project folder and run the setup checker:
+
+```
+bash scripts/onboard.sh
+```
+
+This interactive script checks all prerequisites (.NET SDK, GitHub CLI, auth, git identity) and walks you through installing anything that's missing. Once everything is green, start Claude:
 
 ```
 claude
@@ -21,13 +27,10 @@ claude
 
 **Claude handles everything automatically on first launch:**
 
-1. Installs the .NET SDK if you don't have it (you may be prompted for your password)
-2. Installs the GitHub CLI (`gh`) if you don't have it
-3. Opens a browser for you to sign in to GitHub (create a free account at github.com/signup if you don't have one)
-4. Configures your git credentials so you can push code
-5. Pulls the latest code
-6. Creates a feature branch for your work
-7. Asks what you'd like to build
+1. Verifies your environment (or runs the same checks as `onboard.sh`)
+2. Pulls the latest code
+3. Creates a feature branch for your work
+4. Asks what you'd like to build
 
 If Claude says you need collaborator access, send your GitHub username to the repo owner so they can add you. Accept the invite at github.com/notifications, then tell Claude to try again.
 
@@ -115,4 +118,4 @@ If you prefer working without Claude Code, see the full project structure and co
 - **Frontend**: Blazor Server at `src/AppTemplate.Web/`
 - **Tests**: xUnit + FluentAssertions + NSubstitute + bUnit
 - **IDE**: Open `AppTemplate.slnx` in Visual Studio or Rider
-- **Git**: Run `gh auth setup-git` to configure credentials. Use `git.exe` for push/pull if in WSL without `gh`.
+- **Git**: Run `gh auth login` then `gh auth setup-git` to configure credentials. After that, native `git` works for all operations.

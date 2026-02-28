@@ -66,6 +66,7 @@ Then run the normal session start workflow:
 - **CI**: GitHub Actions uses `dotnet-version: 10.0.x`
 
 ## Commands
+- **First-time setup**: `bash scripts/onboard.sh` (interactive -- checks .NET, gh, auth, git identity)
 - Build all: `dotnet build`
 - Run API: `dotnet run --project src/AppTemplate.Api`
 - Run Web: `dotnet run --project src/AppTemplate.Web`
@@ -144,7 +145,8 @@ Or manually:
 Git is fully automated. You (Claude) manage all git operations -- the user never needs to run git commands.
 
 ### First-Time Setup (auto-detected)
-On every session start, check the user's environment and auto-install anything missing:
+On every session start, check the user's environment and auto-install anything missing.
+Users can also run the interactive setup script directly: `bash scripts/onboard.sh`
 1. .NET SDK -- detect platform (WSL2/Windows/Mac), install if missing
 2. GitHub CLI (`gh`) -- detect platform, install if missing
 3. GitHub auth -- `gh auth login --web` (sign in with company email), then `gh auth setup-git`
@@ -217,9 +219,9 @@ If it fails, no error -- the chat bubble will show the manual key entry form as 
 5. The Stop hook (`git-sync.sh`) also does this as a safety net
 
 ### Remote Operations
-- Once `gh auth setup-git` has been run, both `git` and `git.exe` work for remote ops
-- For fresh setups before `gh` is configured, use `git.exe` as fallback (Windows Credential Manager)
-- Use `git` for local operations (add, commit, checkout, merge, status)
+- Install `gh` in WSL → `gh auth login` → `gh auth setup-git` → native `git push/pull/fetch` works
+- Always use `git` for all operations (local and remote) once `gh auth setup-git` has been run
+- Avoid `git.exe` from WSL -- path translation breaks Git Credential Manager and is unreliable
 
 - See @docs/BRANCHING.md for full details
 
