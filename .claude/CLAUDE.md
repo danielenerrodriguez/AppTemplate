@@ -7,6 +7,7 @@ See `.claude/commands/` for custom slash commands:
 - `/new-feature {name}` - Scaffold a complete vertical slice (CRUD endpoints, service, Blazor page, tests)
 - `/kickoff {topic}` - Run the hackathon kickoff flow (update CLAUDE.md, propose features, scaffold all)
 - `/status` - Show git, build, test, and feature status report
+- `/onboard` - Run environment setup checks (or direct user to `bash scripts/onboard.sh`)
 
 ## Rules
 See `.claude/rules/` for topic-specific coding rules:

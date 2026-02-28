@@ -82,6 +82,7 @@ Then run the normal session start workflow:
 - `/kickoff {topic}` -- Run the hackathon kickoff flow (update CLAUDE.md, propose features, scaffold everything)
 - `/status` -- Show git, build, test, plan, and feature status report
 - `/plan [action]` -- View or update the project plan (`PLAN.md`). Actions: `add`, `done`, `progress`, `assign`, `note`, `sync`, or no args to show summary
+- `/onboard` -- Run environment setup checks (or direct user to `bash scripts/onboard.sh`)
 
 ## Architecture
 This project uses **feature-based vertical slices**. Each feature is self-contained:
